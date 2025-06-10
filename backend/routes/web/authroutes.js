@@ -34,25 +34,36 @@ router.post("/register", async (req, res) => {
 });
 router.post("/login", async (req, res) => {
   const { password, email } = req.body;
-
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: "Invalid E-Mail" });
-
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      console.log("Login fail: User not found for email", email);
+      return res.status(400).json({ error: "Invalid E-Mail" });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid Password" });
-
+    if (!isMatch) {
+      console.log("Login fail: Password mismatch for", email);
+      return res.status(400).json({ error: "Invalid Password" });
+    }
+    // success
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role,dept:user.dept },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-
-    res.json({ token, role: user.role });
+    res.json({
+      token,
+      role: user.role,
+      dept: user.dept,
+      userId: user._id,
+    });
+    
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ error: "Server error during login" });
   }
 });
+
 router.get("/", async (req, res) => {
   try {
     const allusers = await User.find();
@@ -78,6 +89,25 @@ return res.status(404).json({ message: "User not found" });
     res.status(500).json({ error: "Failed to update email" });
   }
 });
+router.get("/groupheads", async (req, res) => {
+  const { dept } = req.query;
+  if (!dept) return res.status(400).json({ error: "Department required" });
+
+  try {
+    const groupHeads = await User.find({
+      role: "grouphead",
+      dept: dept.toLowerCase(), // Normalize dept name
+    }).select("_id name email");
+    // Optional: limit fields
+    res.json(groupHeads);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
 
 router.put("/update-pass/:id", async (req, res) => {
   try {

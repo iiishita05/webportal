@@ -32,9 +32,10 @@ const status =
       status,
       history: [
         {
-          handler: senderId,
+          actor: senderId,
+          role: senderRole,
           action: "created",
-          timestamp: new Date(),
+          date: new Date(),
         },
       ],
     });
@@ -188,6 +189,55 @@ router.patch(
     }
   }
 );
+// ✅ Head or GroupHead can take a decision (approve/reject)
+router.patch("/:id/decision", verifyrole(["grouphead", "head"]), async (req, res) => {
+  try {
+    const appId = req.params.id;
+    const { action, remark } = req.body;
+    const actorId = req.user._id;
+    const actorRole = req.user.role;
+
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({ message: "Invalid action" });
+    }
+
+    const application = await Application.findById(appId);
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    // Check if the current handler is the one taking action
+    if (application.currentHandler.toString() !== actorId.toString()) {
+      return res.status(403).json({ message: "Not assigned to you" });
+    }
+
+    // Validate status before allowing decision
+    const validStatuses = {
+      grouphead: "Pending Group Head",
+      head: "Pending Head Approval"
+    };
+
+    if (application.status !== validStatuses[actorRole]) {
+      return res.status(400).json({ message: `Not in valid state for ${actorRole}` });
+    }
+
+    application.status = action === "approve" ? "Approved" : "Rejected";
+    application.history.push({
+      actor: actorId,
+      role: actorRole,
+      action,
+      remark,
+      date: new Date()
+    });
+
+    await application.save();
+    res.status(200).json({ message: `Application ${action}ed` });
+  } catch (err) {
+    console.error("Decision Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 
 
 // ✅ View applications submitted by current user

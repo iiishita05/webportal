@@ -5,11 +5,13 @@ const UserSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    trim: true,
   },
   email: {
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
   },
   password: {
     type: String,
@@ -17,30 +19,34 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["admin", "user", "head", "grouphead", "employee"],
-    default: "user",
-  },
-  reportingTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", 
-    default: null,
-  },
-  regon: {
-    type: Date,
-    default: Date.now,
+    enum: ["admin", "head", "grouphead", "employee"],
+    default: "employee",
   },
   empid: {
     type: Number,
-    required: true,
     unique: true,
+    sparse: true,
   },
-  position: {
+  dept: {
     type: String,
-    required: true,
+    enum: [
+      "hr",
+      "legal",
+      "finance",
+      "it",
+      "sales",
+      "operations",
+      "rnd",
+      "marketing",
+    ],
   },
   dateOfJoining: {
     type: Date,
-    default: Date.now,
+  },
+  reportingTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
 });
 
