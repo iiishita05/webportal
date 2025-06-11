@@ -44,13 +44,18 @@ router.get("/filtered", async (req, res) => {
   try {
     const { role, dept } = req.query;
 
+    console.log("Filter query:", { role, dept }); // ✅ NOW safe to log
+
     if (!role) {
       return res.status(400).json({ error: "Role required" });
     }
 
     if (role === "admin" || role === "head") {
-      // Admin and Head see all users except admin (optional)
       const users = await User.find({ role: { $ne: "admin" } });
+      console.log(
+        "Filtered users:",
+        users.map((u) => ({ name: u.name, role: u.role, dept: u.dept }))
+      );
       return res.json(users);
     }
 
@@ -60,18 +65,22 @@ router.get("/filtered", async (req, res) => {
         .json({ error: "Department required for non-admin/head" });
     }
 
-    // Grouphead and employee see their department only
     const users = await User.find({
       dept: dept.toLowerCase(),
-      role: { $ne: "admin" }, // avoid showing admin
+      role: { $ne: "admin" },
     });
 
+    console.log(
+      "Filtered users:",
+      users.map((u) => ({ name: u.name, role: u.role, dept: u.dept }))
+    );
     return res.json(users);
   } catch (err) {
     console.error("Filter fetch failed:", err.message);
     res.status(500).json({ error: "Server error" });
   }
 });
+
   
   
   

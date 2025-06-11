@@ -45,7 +45,11 @@ router.post("/login", async (req, res) => {
       console.log("Login fail: Password mismatch for", email);
       return res.status(400).json({ error: "Invalid Password" });
     }
+    console.log("User dept:", user.dept);
+
     // success
+    console.log("Fetched user:", user);
+
     const token = jwt.sign(
       { userId: user._id, role: user.role,dept:user.dept },
       process.env.JWT_SECRET,
