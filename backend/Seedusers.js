@@ -1,7 +1,11 @@
 const mongoose = require("mongoose");
 const User = require("./models/User");
 
-const MONGO_URI = "mongodb://localhost:27017/mydb"; // Added DB name
+const MONGO_URI = "mongodb://localhost:27017/mydb"; 
+let passwordCounter = 1;
+
+const generatePassword = () => `pass${passwordCounter++}`;
+
 
 const departments = [
   "hr",
@@ -19,15 +23,13 @@ async function seed() {
     await mongoose.connect(MONGO_URI);
     console.log("Connected to MongoDB");
 
-    // Clear existing users (optional)
     await User.deleteMany({});
     console.log("Deleted existing users");
 
-    // Create Head
     const head = new User({
       name: "Head User",
       email: "head@example.com",
-      password: "password123", // Will be hashed by pre-save hook
+      password: generatePassword(), 
       role: "head",
       empid: 1,
       dept: null,
@@ -37,15 +39,14 @@ async function seed() {
     await head.save();
     console.log("Created Head:", head.name);
 
-    let empidCounter = 2; // start after Head's empid=1
+    let empidCounter = 2; 
 
-    // Create Group Heads (GH) for each dept, reportingTo Head
     const groupHeads = [];
     for (const dept of departments) {
       const gh = new User({
         name: `Group Head - ${dept.toUpperCase()}`,
         email: `gh_${dept}@example.com`,
-        password: "password123",
+        password: generatePassword(),
         role: "grouphead",
         empid: empidCounter++,
         dept: dept,
@@ -57,7 +58,6 @@ async function seed() {
       console.log(`Created GH for ${dept}: ${gh.name}`);
     }
 
-    // Create 9 employees per department, reportingTo respective GH
     for (let i = 0; i < departments.length; i++) {
       const dept = departments[i];
       const gh = groupHeads[i];
@@ -67,7 +67,7 @@ async function seed() {
           const emp = new User({
             name: `Employee ${j} - ${dept.toUpperCase()}`,
             email: `emp${j}_${dept}@example.com`,
-            password: "password123",
+            password: generatePassword(),
             role: "employee",
             empid: empidCounter++,
             dept: dept,

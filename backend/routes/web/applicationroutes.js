@@ -4,7 +4,7 @@ const Application = require("../../models/web/Application");
 const verifyrole = require("../../middleware/verifyrole");
 const { v4: uuidv4 } = require("uuid");
 
-// 📩 Submit new application
+
 router.post("/", verifyrole(["employee", "grouphead"]), async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -48,7 +48,6 @@ const status =
   }
 });
 
-// Group Head forwards application to Head
 router.put("/:id/forward", verifyrole(["grouphead"]), async (req, res) => {
   try {
     const appId = req.params.id;
@@ -59,13 +58,11 @@ router.put("/:id/forward", verifyrole(["grouphead"]), async (req, res) => {
       return res.status(400).json({ message: "No reporting Head found" });
     }
 
-    // ✅ Find the specific application document
     const application = await Application.findById(appId);
     if (!application) {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    // ✅ Check if group head is allowed to act on this application
     if (application.currentHandler.toString() !== groupHeadId.toString()) {
       return res.status(403).json({ message: "Not assigned to you" });
     }
@@ -76,7 +73,6 @@ router.put("/:id/forward", verifyrole(["grouphead"]), async (req, res) => {
         .json({ message: "Application not in a forwardable state" });
     }
 
-    // ✅ Update fields
     application.currentHandler = headId;
     application.status = "Pending Head Approval";
 
@@ -94,12 +90,12 @@ router.put("/:id/forward", verifyrole(["grouphead"]), async (req, res) => {
 
     res.status(200).json({ message: "Application forwarded", application });
   } catch (err) {
-    console.error("❌ Forward Error:", err);
+    console.error("Forward Error:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// ✅ Head approves or rejects
+
 router.patch(
   "/:id/decision",
   verifyrole(["grouphead", "head"]),
@@ -110,10 +106,7 @@ router.patch(
       const userId = req.user._id;
       const userRole = req.user.role;
 
-      console.log("🛠 PATCH /:id/decision hit");
-      console.log("Action:", action);
-      console.log("User role:", userRole);
-      console.log("App ID:", appId);
+      
 
       const application = await Application.findById(appId);
       if (!application)
@@ -123,7 +116,6 @@ router.patch(
         return res.status(403).json({ message: "Not assigned to you" });
       }
 
-      // ✅ Group Head can reject apps before forwarding
       if (
         userRole === "grouphead" &&
         application.status === "Pending Group Head"
@@ -135,7 +127,7 @@ router.patch(
         }
 
         application.status = "rejected";
-        application.currentHandler = userId; // keep it or null — up to you
+        application.currentHandler = userId; 
 
         application.history.push({
           actor: userId,
@@ -151,7 +143,6 @@ router.patch(
           .json({ message: "Application rejected", application });
       }
 
-      // ✅ Head can approve or reject apps forwarded to them
       if (
         userRole === "head" &&
         application.status === "Pending Head Approval"
@@ -189,7 +180,6 @@ router.patch(
     }
   }
 );
-// ✅ Head or GroupHead can take a decision (approve/reject)
 router.patch("/:id/decision", verifyrole(["grouphead", "head"]), async (req, res) => {
   try {
     const appId = req.params.id;
@@ -206,12 +196,10 @@ router.patch("/:id/decision", verifyrole(["grouphead", "head"]), async (req, res
       return res.status(404).json({ message: "Application not found" });
     }
 
-    // Check if the current handler is the one taking action
     if (application.currentHandler.toString() !== actorId.toString()) {
       return res.status(403).json({ message: "Not assigned to you" });
     }
 
-    // Validate status before allowing decision
     const validStatuses = {
       grouphead: "Pending Group Head",
       head: "Pending Head Approval"
@@ -240,7 +228,6 @@ router.patch("/:id/decision", verifyrole(["grouphead", "head"]), async (req, res
 
 
 
-// ✅ View applications submitted by current user
 router.get(
   "/mine",
   verifyrole(["employee", "grouphead", "head"]),
@@ -248,7 +235,7 @@ router.get(
     try {
       const apps = await Application.find({ sender: req.user._id })
         .sort({ createdAt: -1 })
-        .populate("sender", "name"); // ✅ populate name
+        .populate("sender", "name");
       res.json(apps);
     } catch (err) {
       console.error(err);
@@ -257,12 +244,11 @@ router.get(
   }
 );
 
-// ✅ View applications assigned to current user
 router.get("/assigned", verifyrole(["grouphead", "head"]), async (req, res) => {
   try {
     const apps = await Application.find({ currentHandler: req.user._id })
       .sort({ createdAt: -1 })
-      .populate("sender", "name"); // ✅ populate name
+      .populate("sender", "name"); 
     res.json(apps);
   } catch (err) {
     console.error(err);
@@ -289,7 +275,7 @@ router.get(
         return res.status(404).json({ message: "Application not found" });
       }
 
-      // ✅ Allow if:
+      
       const isSender =
         application.sender?._id?.toString() === userId.toString();
       const isCurrentHandler =
@@ -309,7 +295,7 @@ router.get(
 
       return res.status(403).json({ message: "Access denied" });
     } catch (err) {
-      console.error("❌ Error fetching application:", err);
+      console.error("Error fetching application:", err);
       res.status(500).json({ message: "Internal Server Error" });
     }
   }

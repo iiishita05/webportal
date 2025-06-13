@@ -3,35 +3,36 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+const zxcvbn = require("zxcvbn");
 require("dotenv").config();
 
-router.post("/register", async (req, res) => {
-  const { name, password, email, role, reportingTo } = req.body;
+// router.post("/register", async (req, res) => {
+//   const { name, password, email, role, reportingTo } = req.body;
 
-  if (!name || !password || !email) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
+//   if (!name || !password || !email) {
+//     return res.status(400).json({ error: "All fields are required" });
+//   }
 
-  try {
-    const existingMailUser = await User.findOne({ email });
-    if (existingMailUser)
-      return res.status(400).json({ error: "E-Mail already exists" });
+//   try {
+//     const existingMailUser = await User.findOne({ email });
+//     if (existingMailUser)
+//       return res.status(400).json({ error: "E-Mail already exists" });
 
-    const newUser = new User({
-      name,
-      email,
-      password,
-      role,
-      reportingTo: reportingTo || null,
-    });
+//     const newUser = new User({
+//       name,
+//       email,
+//       password,
+//       role,
+//       reportingTo: reportingTo || null,
+//     });
 
-    await newUser.save();
-    res.status(201).json({ message: "User registered" });
-  } catch (error) {
-    console.error("Registration error:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
+//     await newUser.save();
+//     res.status(201).json({ message: "User registered" });
+//   } catch (error) {
+//     console.error("Registration error:", error.message);
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 router.post("/login", async (req, res) => {
   const { password, email } = req.body;
   try {
@@ -47,7 +48,7 @@ router.post("/login", async (req, res) => {
     }
     console.log("User dept:", user.dept);
 
-    // success
+   
     console.log("Fetched user:", user);
 
     const token = jwt.sign(
@@ -67,6 +68,40 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: "Server error during login" });
   }
 });
+
+
+ router.post("/change-password", async (req, res) => {
+   try {
+     const { email, oldPassword, newPassword } = req.body;
+     console.log("Received:", email, oldPassword, newPassword);
+
+     if (!email || !oldPassword || !newPassword) {
+       return res.status(400).json({ error: "All fields are required" });
+     }
+
+     if (oldPassword === newPassword) {
+       return res.status(400).json({ error: "New password must be different" });
+     }
+
+     const user = await User.findOne({ email });
+     if (!user) {
+       return res.status(404).json({ error: "User not found" });
+     }
+
+     const isMatch = await bcrypt.compare(oldPassword, user.password);
+     if (!isMatch) {
+       return res.status(401).json({ error: "Incorrect current password" });
+     }
+
+     user.password = newPassword;
+     await user.save();
+
+     return res.json({ message: "Password changed successfully" });
+   } catch (err) {
+     console.error("🔥 Error changing password:", err.message);
+     res.status(500).json({ error: "Internal Server Error" });
+   }
+ });
 
 router.get("/", async (req, res) => {
   try {
@@ -100,9 +135,9 @@ router.get("/groupheads", async (req, res) => {
   try {
     const groupHeads = await User.find({
       role: "grouphead",
-      dept: dept.toLowerCase(), // Normalize dept name
+      dept: dept.toLowerCase(), 
     }).select("_id name email");
-    // Optional: limit fields
+   
     res.json(groupHeads);
   } catch (err) {
     console.error(err);

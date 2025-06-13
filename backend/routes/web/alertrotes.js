@@ -22,5 +22,14 @@ router.post("/delete", async (req,res)=>{
     }catch(err){
         res.status(400).json({error:"Failed to delete alert"}); 
     }
-})
+});
+router.get("/", async (req, res) => {
+  try {
+    const latestAlert = await Alert.findOne().sort({ _id: -1 });
+    res.status(200).json(latestAlert || {});
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch alert" });
+  }
+});
+  
 module.exports=router;

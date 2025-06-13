@@ -1,32 +1,40 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from transformers import pipeline
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:3000"]) 
+
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-@app.after_request
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3002'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
-    return response
-
-@app.route('/tag', methods=['POST', 'OPTIONS'])
+@app.route('/tag', methods=['POST'])
 def tag():
-    if request.method == 'OPTIONS':
-        return make_response('', 204)
-
     data = request.get_json()
     text = data.get('text', '')
-    labels = ["Urgent", "Leave", "Budget", "Maintenance", "Meeting", "Complaint", "Request", "General","Medical"]
 
-    if not text:
+    print(">>> Received request:", text)
+
+    labels = ["Urgent", "Leave", "Budget", "Maintenance", "Meeting", "Complaint", "Request", "General", "Medical"]
+
+    if not text.strip():
+        print(">>> Empty text")
         return jsonify({"tags": []})
 
-    result = classifier(text, labels)
-    tags = [label for label, score in zip(result['labels'], result['scores']) if score > 0.5]
+    result = classifier(
+    text,
+    candidate_labels=labels,
+    hypothesis_template="This text is about {}."
+)
 
-    return jsonify({"tags": tags})
+    print(">>> Raw model result:", result)
+
+    tags_above_threshold = [label for label, score in zip(result['labels'], result['scores']) if score >= 0.3]
+
+    if not tags_above_threshold:
+        tags_above_threshold = result['labels'][:3]
+
+    print(">>> Selected tags:", tags_above_threshold)
+    return jsonify({"tags": tags_above_threshold})
 
 if __name__ == '__main__':
     app.run(port=5002)

@@ -1,4 +1,3 @@
-// middleware/verifyrole.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
@@ -16,9 +15,9 @@ const verifyrole = (roles) => {
     try {
       const token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("✅ Token decoded:", decoded);
+      console.log("Token decoded:", decoded);
 
-      const user = await User.findById(decoded.userId).select("-password"); // ✅ correct
+      const user = await User.findById(decoded.userId).select("-password"); 
       console.log("👤 Fetched User:", user);
 
       if (!user || !roles.includes(user.role)) {

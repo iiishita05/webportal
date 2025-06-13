@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const User = require("../../models/User");
 
-// Add employee
 router.post("/addemp", async (req, res) => {
   try {
     const { email, empid, name, position } = req.body;
@@ -29,7 +28,6 @@ router.post("/addemp", async (req, res) => {
   }
 });
 
-// Get all employees
 router.get("/", async (req, res) => {
   try {
     const emp = await User.find({
@@ -85,7 +83,6 @@ router.get("/filtered", async (req, res) => {
   
   
 
-// Search by empid
 router.get("/search/id/:empid", async (req, res) => {
   try {
     const emp = await User.findOne({
@@ -99,7 +96,6 @@ router.get("/search/id/:empid", async (req, res) => {
   }
 });
 
-// Search by name
 router.get("/search/name/:name", async (req, res) => {
   try {
     const emp = await User.findOne({ name: req.params.name, role: "employee" });
@@ -110,7 +106,6 @@ router.get("/search/name/:name", async (req, res) => {
   }
 });
 
-// Delete employee by empid
 router.delete("/delete/:empid", async (req, res) => {
   try {
     const del = await User.deleteOne({
@@ -126,7 +121,6 @@ router.delete("/delete/:empid", async (req, res) => {
   }
 });
 
-// Update employee
 router.put("/update/:empid", async (req, res) => {
   try {
     const updated = await User.findOneAndUpdate(

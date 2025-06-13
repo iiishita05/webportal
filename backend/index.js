@@ -7,14 +7,53 @@ const app=express();
 
 const PORT = process.env.PORT || 5000;
 
-app.use('/uploads',express.static('uploads'));
+
+
+
+
 
 
 app.use(
   cors({
-    origin: "*", // NOT RECOMMENDED for production
+    origin: [
+      
+      "https://ab42-2405-201-6011-4a51-94d9-7590-e20d-5256.ngrok-free.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   })
 );
+
+
+
+const { WebSocketServer } = require("ws");
+
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+const wss = new WebSocketServer({ server });
+
+
+wss.on("connection", (ws) => {
+  console.log("WebSocket client connected");
+  ws.send("Hello from WebSocket server!");
+
+  ws.on("message", (message) => {
+    console.log("Received message from client:", message.toString());
+  });
+
+  ws.on("close", () => {
+    console.log("WebSocket client disconnected");
+  });
+});
+
+
+
+app.use('/uploads',express.static('uploads'));
+
+
+
 
 
 app.use(express.json());
@@ -27,10 +66,7 @@ mongoose.connect(process.env.dbUrl).then(()=>console.log("mongodb connected")).c
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
-console.log(
-  "OPENAI_API_KEY:",
-  process.env.OPENAI_API_KEY ? "Loaded" : "Missing"
-);
+
 
 const noticeRoutes=require('./routes/web/noticeRoutes');
 app.use('/api/notices',noticeRoutes);
@@ -44,17 +80,8 @@ app.use("/api/employees",empRoutes);
 const applicationRoutes = require("./routes/web/applicationroutes");
 app.use("/api/applications", applicationRoutes);
 
-const mlRoutes = require("./routes/web/mlroutes");
-app.use("/api/mlroutes", mlRoutes);
+const alertRoutes = require("./routes/web/alertrotes");
+app.use("/api/alerts", alertRoutes);
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-const alertRoutes=require('./routes/web/alertrotes');
-app.use("/api/alerts",alertRoutes);
-app.use(
-  cors({
-    origin: ["http://localhost:3000","http://localhost:3001","http://localhost:3002"],
-  })
-);
+
