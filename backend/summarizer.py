@@ -6,10 +6,18 @@ app = Flask(__name__)
 
 
 
-CORS(app, resources={r"/*": {"origins": [
-    "http://localhost:3000",
-    "https://e1c5-2405-201-6011-4a51-9d18-86f0-3000-f7c4.ngrok-free.app"
-]}})
+CORS(app, supports_credentials=True, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002",
+            "http://localhost:3003",
+            "http://localhost:3004",
+        ]
+    }
+})
+
 
 
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn")

@@ -13,40 +13,51 @@ const PORT = process.env.PORT || 5000;
 
 
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://localhost:3003",
+  "http://localhost:3004",
+];
+
 app.use(
   cors({
-    origin: [
-      
-      "https://ab42-2405-201-6011-4a51-94d9-7590-e20d-5256.ngrok-free.app",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
 
 
-const { WebSocketServer } = require("ws");
+// const { WebSocketServer } = require("ws");
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const wss = new WebSocketServer({ server });
+// const wss = new WebSocketServer({ server });
 
 
-wss.on("connection", (ws) => {
-  console.log("WebSocket client connected");
-  ws.send("Hello from WebSocket server!");
+// wss.on("connection", (ws) => {
+//   console.log("WebSocket client connected");
+//   ws.send("Hello from WebSocket server!");
 
-  ws.on("message", (message) => {
-    console.log("Received message from client:", message.toString());
-  });
+//   ws.on("message", (message) => {
+//     console.log("Received message from client:", message.toString());
+//   });
 
-  ws.on("close", () => {
-    console.log("WebSocket client disconnected");
-  });
-});
+//   ws.on("close", () => {
+//     console.log("WebSocket client disconnected");
+//   });
+// });
 
 
 
